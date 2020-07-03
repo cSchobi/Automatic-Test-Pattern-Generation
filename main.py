@@ -3,6 +3,6 @@ from Parser import Parser
 import sys
 
 c = Circuit()
-p = Parser(c, 'c17.bench')
+p = Parser(c, 'c432.bench')
 p.parse()
 c.print()

@@ -1,44 +1,90 @@
 from Node import *
+from Edge import *
 
 class Gate(object):
-    
-    def __init__(self, name):
+    def __init__(self, name, inputSize):
         self.name = name
-        self.inputs = []
+        self.output = OutputNode(self)
+        self.inputs = [InputNode(self) for i in range(inputSize)]
 
     def __str__(self):
         return self.name
 
+    def connectOutput(self, edge: Edge):
+        self.output.connect(edge)
+        edge.connectInput(self.output)
+
+    def connectInput(self, edge: Edge, i):
+        self.inputs[i].connect(edge)
+        edge.connectOutput(self.inputs[i])
+
+    def getInputNodeIndex(self, node):
+        return self.inputs.index(node)
+
     def accept(self, visitor):
-        print("abstract method for visitor")
+        print("abstract method for visitor")    
 
-    def setOutput(self, output):
-        self.output = output
-
-    def addInput(self, input):
-        self.inputs.append(input)
-
-    def setInputs(self, inputs):
-        self.inputs = []
-        for i in inputs:
-            self.addInput(i)
 
 class AndGate(Gate):
     def accept(self, visitor):
         visitor.visit_and(self)
 
+    def __str__(self):
+        return 'and_' + super().__str__()
+
 class NandGate(Gate):
     def accept(self, visitor):
         visitor.visit_nand(self)
+
+    def __str__(self):
+        return 'nand_' + super().__str__()
 
 class OrGate(Gate):
     def accept(self, visitor):
         visitor.visit_or(self)
 
+    def __str__(self):
+        return 'or_' + super().__str__()
+
 class NorGate(Gate):
     def accept(self, visitor):
         visitor.visit_nor(self)
 
+    def __str__(self):
+        return 'nor_' + super().__str__()
+
 class NotGate(Gate):
     def accept(self, visitor):
         visitor.visit_not(self)
+
+    def __str__(self):
+        return 'not_' + super().__str__()     
+
+class XorGate(Gate):
+    def accept(self, visitor):
+        visitor.visit_xor(self)
+
+    def __str__(self):
+        return 'xor_' + super().__str__()   
+
+class OutputNode(object):
+    def __init__(self, gate):
+        self.edges = []
+        self.gate = gate
+
+    def connect(self, edge):
+        self.edges.append(edge)
+
+    def __str__(self):
+        return self.gate.__str__()
+
+class InputNode(object):
+    def __init__(self, gate):
+        self.inEdge = None
+        self.gate = gate
+
+    def connect(self, edge):
+        self.inEdge = edge
+
+    def __str__(self):
+        return self.gate.__str__() + '_'+ self.gate.getInputNodeIndex(self).__str__()

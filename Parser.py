@@ -32,48 +32,24 @@ class Parser(object):
                 continue
             self.parseGate(line)
 
-        pass
+        # connect output nodes to gates
+        for node in self.circuit.getOutNodes():
+            self.circuit.connectOutput(node)
 
     def parseGate(self, line):
-        (gate, gateInNodeNames) = self.getGate(line)
-        gateName = gate.name
-        self.circuit.addGate(gate)
-        if self.circuit.containsOutNode(gateName):
-            gateOutNode = self.circuit.getOutNode(gateName)
-        else:
-            gateOutNode = GateOutNode(gateName)
-            self.circuit.addNode(gateOutNode)
-        gateInNodes = [GateInNode(gateName + " in %d" % ctr) for ctr, nodeName in enumerate(gateInNodeNames)]
-        gate.setOutput(gateOutNode)
-        gate.setInputs(gateInNodes)
-
+        (gateName, gateType, signalNames) = self.getGate(line)
+        self.circuit.addGate(gateName, gateType, len(signalNames))
+        
         # add edges
-        for gateInNode in gateInNodes:
-            self.circuit.addNode(gateInNode)
-        outNodes = [self.circuit.getNode(nodeName) for nodeName in gateInNodeNames]
-        for (inNode, outNode) in zip(outNodes, gateInNodes):
-            self.circuit.addEdge(inNode, outNode)
+        for ctr, signalName in enumerate(signalNames):
+            self.circuit.connectGate(signalName, gateName, ctr)
 
     def getGate(self, line):
         m = Parser.GATE_PATTERN.match(line)
         if m is None:
-            print("error")
-            print("line:", line)
-            print("after line")
+            raise ValueError('invalid gate line: ', line)
         gateName = m.group(1)
         gateType = m.group(2)
         gateInputs = m.group(3).split(', ')
-        if gateType == 'and':
-            gate = AndGate(gateName)
-        elif gateType == 'nand':
-            gate = NandGate(gateName)
-        elif gateType == 'or':
-            gate = OrGate(gateName)
-        elif gateType == 'nor':
-            gate = NorGate(gateName)
-        elif gateType == 'not':
-            gate = NotGate(gateName)
-        else:
-            print("unexpected gate type")
 
-        return (gate, gateInputs)
+        return (gateName, gateType, gateInputs)
