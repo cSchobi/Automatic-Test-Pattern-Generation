@@ -28,6 +28,10 @@ class InNode(Node):
         self.outEdges.append(edge)
         edge.connectInput(self)
 
+    def disconnectOutput(self, edge):
+        self.outEdges.remove(edge)
+        edge.disconnectInput()
+
 class OutNode(Node):
     
     def __init__(self, name):
@@ -37,6 +41,10 @@ class OutNode(Node):
         self.inEdge = edge
         edge.connectOutput(self)
     
+    def disconnectInput(self):
+        self.inEdge.disconnectOutput()
+        self.inEdge = None
+        
     def connectOutPut(self, edge):
         raise ValueError('output of circuit cannot be connected to an input node')
 

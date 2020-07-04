@@ -4,13 +4,16 @@ from Gate import *
 
 class Circuit(object):
     
+    STUCK_AT_1_FAULT = InNode('TRUE')
+    STUCK_AT_0_FAULT = InNode('FALSE')
+
     def __init__(self):
         self.inNodes = {}
         self.outNodes = {}
         self.gates = {}
         self.edges = []
 
-    def addNode(self, node):
+    def addNode(self, node: Node):
         if isinstance(node, InNode):
             self.addInNode(node)
         elif isinstance(node, OutNode):
@@ -42,8 +45,38 @@ class Circuit(object):
     def addEdge(self, inNode, outNode):
         self.edges.append(Edge(inNode, outNode))
 
-    def addFault(self, faultPos):
-        pass
+    def addFault(self, signalName, fault, inputIndex = None):
+        if signalName in self.inNodes: # fault at input
+            node = self.inNodes[signalName]
+            # iterate over copy of list because deleting
+            # while iterating gives undefined behaviour
+            for e in node.outEdges[:]:
+                node.disconnectOutput(e)
+                e.connectInput(fault)
+
+        elif signalName in self.outNodes and inputIndex is None:
+            node = self.outNodes[signalName]
+            e = node.inEdge
+            e.inNode.disconnectOutput(e)
+            fault.connectOutput(e)
+
+        elif signalName in self.gates:
+            gate = self.gates[signalName]
+            if inputIndex is None: # fault at output of gate
+                node = gate.output
+                # iterate over copy of list because deleting 
+                # while iterating gives undefined behaviour
+                for e in node.outEdges[:]: 
+                    
+                    node.disconnectOutput(e)
+                    fault.connectOutput(e)
+            else: # fault at input
+                node = gate.inputs[inputIndex]
+                e = node.inEdge
+                e.inNode.disconnectOutput(e)
+                fault.connectOutput(e)                
+        else:
+            raise ValueError('cannot add fault because signal is not found')
 
     def containsOutNode(self, nodeName):
         return nodeName in self.outNodes
@@ -92,9 +125,6 @@ class Circuit(object):
         self.edges.append(edge)
         gate.connectOutput(edge)
         outputNode.connectInput(edge)
-
-    def addFault(self, nodeName):
-        pass
 
     def print(self):
         print("input")   

@@ -8,6 +8,12 @@ class Edge(object):
     def connectInput(self, node):
         self.inNode = node
 
+    def disconnectOutput(self):
+        self.outNode = None
+
+    def disconnectInput(self):
+        self.inNode = None
+
     def getOutput(self):
         return self.outNode
 

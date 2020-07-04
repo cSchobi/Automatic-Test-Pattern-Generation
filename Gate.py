@@ -69,12 +69,16 @@ class XorGate(Gate):
 
 class OutputNode(object):
     def __init__(self, gate):
-        self.edges = []
+        self.outEdges = []
         self.gate = gate
 
     def connect(self, edge):
-        self.edges.append(edge)
+        self.outEdges.append(edge)
 
+    def disconnectOutput(self, edge):
+        self.outEdges.remove(edge)
+        edge.disconnectInput()
+        
     def __str__(self):
         return self.gate.__str__()
 
