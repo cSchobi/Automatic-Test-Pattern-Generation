@@ -13,34 +13,25 @@ class Circuit(object):
         self.gates = {}
         self.edges = []
 
-    def addNode(self, node: Node):
-        if isinstance(node, InNode):
-            self.addInNode(node)
-        elif isinstance(node, OutNode):
-            self.addOutNode(node)
-        else:
-            raise ValueError('unexpected node type')
+    def addInNode(self, nodeName: str):
+        assert(nodeName not in self.inNodes)
+        self.inNodes[nodeName] = InNode(nodeName)
 
-    def addInNode(self, node):
-        assert(node.name not in self.inNodes)
-        self.inNodes[node.name] = node
-
-    def getInNode(self, nodeName):
+    def getInNode(self, nodeName: str):
         return self.inNodes[nodeName]
 
-    def addOutNode(self, node):
-        assert(node.name not in self.outNodes)
-        self.outNodes[node.name] = node
+    def addOutNode(self, nodeName: str):
+        assert(nodeName not in self.outNodes)
+        self.outNodes[nodeName] = OutNode(nodeName)
 
-    def getOutNode(self, nodeName):
+    def getOutNode(self, nodeName: str):
         return self.outNodes[nodeName]
 
-    def getOutNodes(self):
-        return self.outNodes.values()
+    def getOutNodeNames(self):
+        return self.outNodes.keys()
 
-    def addGate(self, gate):
-        assert(gate.name not in self.gates)
-        self.gates[gate.name] = gate
+    def containsOutNode(self, nodeName: str):
+        return nodeName in self.outNodes
 
     def addEdge(self, inNode, outNode):
         self.edges.append(Edge(inNode, outNode))
@@ -67,7 +58,6 @@ class Circuit(object):
                 # iterate over copy of list because deleting 
                 # while iterating gives undefined behaviour
                 for e in node.outEdges[:]: 
-                    
                     node.disconnectOutput(e)
                     fault.connectOutput(e)
             else: # fault at input
@@ -77,17 +67,6 @@ class Circuit(object):
                 fault.connectOutput(e)                
         else:
             raise ValueError('cannot add fault because signal is not found')
-
-    def containsOutNode(self, nodeName):
-        return nodeName in self.outNodes
-
-    def getNode(self, nodeName):
-        if nodeName in self.inNodes:
-            return self.getInNode(nodeName)
-        elif nodeName in self.outNodes:
-            return self.getOutNode(nodeName)
-        else:
-            raise ValueError('node ' + nodeName + ' is no in the circuit')
 
     def addGate(self, gateName, gateType, numInputs):
         if gateType == 'and':
@@ -106,6 +85,7 @@ class Circuit(object):
             raise ValueError('unexpected gate type')
         self.gates[gate.name] = gate
 
+    # connect a signal to a specified input of a gate
     def connectGate(self, signalName, gateName, ctr):
         if signalName in self.gates:
             node = self.gates[signalName]
@@ -119,12 +99,67 @@ class Circuit(object):
         node.connectOutput(edge)
         self.gates[gateName].connectInput(edge, ctr)
     
-    def connectOutput(self, outputNode):
-        gate = self.gates[outputNode.name]
+    # helper function to connect output gates to output nodes
+    # because connectGate only connects the inputs of the gate
+    def connectOutput(self, outputNodeName: str):
+        gate = self.gates[outputNodeName]
+        outputNode = self.outNodes[outputNodeName]
         edge = Edge()
         self.edges.append(edge)
         gate.connectOutput(edge)
         outputNode.connectInput(edge)
+
+    def generateMiter(self, faulty):
+        # 1. merge gates, edges and outNodes of faulty circuit into orignal circuit
+        # copy gates
+        for gate in faulty.gates.values():
+            gate.name = gate.name + "f"
+            self.gates[gate.name] = gate
+        # copy outNodes
+        """for node in faulty.outNodes.values():
+            node.name = node.name + "f"
+            self.outNodes[node.name] = node"""
+        # copy edges
+        for e in faulty.edges:
+            self.edges.append(e)
+        # redirect edges from input in faulty to input of original circuit
+        for inNode in faulty.inNodes.values():
+            for e in inNode.outEdges[:]:
+                inNode.disconnectOutput(e)
+                # connect edge to inNode of original circuit with same name
+                e.connectInput(self.inNodes[inNode.name]) 
+
+        # 2. add miter structure; replace outNodes with XOR gates, add final Or gate and add 1 outNode
+        ctr = 0
+        xor_gates = []
+        for (outName, outNode) in self.outNodes.items():
+            outNodeFaulty = faulty.getOutNode(outName)
+            xor_name = "miter_XOR_%d" % ctr
+            self.addGate(xor_name, 'xor', 2)
+            xor_gates.append(self.gates[xor_name])
+            ctr += 1
+            outGate = self.gates[outName]
+            e = outNode.inEdge
+            outGate.disconnectOutput(e)
+            self.edges.remove(e)
+            self.connectGate(outName, xor_name, 0)
+
+            outGate = faulty.gates[outName]
+            e = outNodeFaulty.inEdge
+            outGate.disconnectOutput(e)
+            self.edges.remove(e)
+            self.connectGate(outName + "f", xor_name, 1)
+        pass
+        self.outNodes = {}
+        # generate final OR and connect XORs to it
+        miter_or_name = "miter_OR"
+        self.addGate(miter_or_name, 'or', ctr)
+        assert(len(xor_gates) == ctr)
+        for (ctr, gate) in enumerate(xor_gates):
+            self.connectGate(gate.name, miter_or_name, ctr)
+        
+        self.addOutNode(miter_or_name)
+        self.connectOutput(miter_or_name)
 
     def print(self):
         print("input")   

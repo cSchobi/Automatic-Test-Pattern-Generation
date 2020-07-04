@@ -10,8 +10,7 @@ class Parser(object):
     OUTPUT_PATTERN = re.compile("OUTPUT\((.*)\)")
     GATE_PATTERN = re.compile('(.*) = (.*)\((.*)\)')
 
-
-    def __init__(self, circuit: Circuit, fileName):
+    def __init__(self, circuit: Circuit, fileName: str):
         self.circuit = circuit
         self.fileName = fileName
 
@@ -22,19 +21,17 @@ class Parser(object):
                 continue
             m = Parser.INPUT_PATTERN.match(line)
             if m:
-                node = InNode(m.group(1))
-                self.circuit.addInNode(node)
+                self.circuit.addInNode(m.group(1))
                 continue
             m = Parser.OUTPUT_PATTERN.match(line)
             if m:
-                node = OutNode(m.group(1))
-                self.circuit.addOutNode(node)
+                self.circuit.addOutNode(m.group(1))
                 continue
             self.parseGate(line)
 
         # connect output nodes to gates
-        for node in self.circuit.getOutNodes():
-            self.circuit.connectOutput(node)
+        for nodeName in self.circuit.getOutNodeNames():
+            self.circuit.connectOutput(nodeName)
 
     def parseGate(self, line):
         (gateName, gateType, signalNames) = self.getGate(line)

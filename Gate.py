@@ -11,11 +11,14 @@ class Gate(object):
         return self.name
 
     def connectOutput(self, edge: Edge):
-        self.output.connect(edge)
+        self.output.connectOutput(edge)
         edge.connectInput(self.output)
 
+    def disconnectOutput(self, edge: Edge):
+        self.output.disconnectOutput(edge)
+
     def connectInput(self, edge: Edge, i):
-        self.inputs[i].connect(edge)
+        self.inputs[i].connectInput(edge)
         edge.connectOutput(self.inputs[i])
 
     def getInputNodeIndex(self, node):
@@ -67,13 +70,16 @@ class XorGate(Gate):
     def __str__(self):
         return 'xor_' + super().__str__()   
 
-class OutputNode(object):
+class OutputNode(Node):
     def __init__(self, gate):
         self.outEdges = []
         self.gate = gate
 
-    def connect(self, edge):
+    def connectOutput(self, edge):
         self.outEdges.append(edge)
+
+    def connectInput(self, edge):
+        raise ValueError('output node of gate has no input')
 
     def disconnectOutput(self, edge):
         self.outEdges.remove(edge)
@@ -82,13 +88,19 @@ class OutputNode(object):
     def __str__(self):
         return self.gate.__str__()
 
-class InputNode(object):
+class InputNode(Node):
     def __init__(self, gate):
         self.inEdge = None
         self.gate = gate
 
-    def connect(self, edge):
+    def connectInput(self, edge):
         self.inEdge = edge
+
+    def disconnectInput(self):
+        self.inEdge = None
+
+    def connectOutput(self, edge):
+        raise ValueError('inputNode of gate has no output')
 
     def __str__(self):
         return self.gate.__str__() + '_'+ self.gate.getInputNodeIndex(self).__str__()
