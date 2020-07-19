@@ -68,7 +68,14 @@ class XorGate(Gate):
         visitor.visit_xor(self)
 
     def __str__(self):
-        return 'xor_' + super().__str__()   
+        return 'xor_' + super().__str__()  
+
+class BufGate(Gate):
+    def accept(self, visitor):
+        visitor.visit_buf(self)
+
+    def  __str__(self):
+        return 'buf_' + super().__str__()
 
 class OutputNode(Node):
     def __init__(self, gate):
