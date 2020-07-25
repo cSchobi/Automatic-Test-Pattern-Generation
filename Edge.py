@@ -1,6 +1,9 @@
 from Node import Node
 
 class Edge(object):
+    """
+    Represents a single edge connecting two nodes
+    """
 
     def connectOutput(self, node):
         self.outNode = node

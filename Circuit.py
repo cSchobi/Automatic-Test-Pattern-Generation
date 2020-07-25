@@ -2,6 +2,9 @@ from Node import *
 from Edge import Edge
 from Gate import *
 
+"""
+Represantion of a circuit object
+"""
 class Circuit(object):
     
     STUCK_AT_1_FAULT = InNode('TRUE')
@@ -52,7 +55,8 @@ class Circuit(object):
     def addEdge(self, inNode, outNode):
         self.edges.append(Edge(inNode, outNode))
 
-    def addFault(self, fault, signalName, inputIndex = None):
+    def addFault(self, fault, signalName, **kwargs):
+        useOutNode = kwargs.get('useOutNode', None)
         if signalName in self.inNodes: # fault at input
             node = self.inNodes[signalName]
             # iterate over copy of list because deleting
@@ -61,14 +65,17 @@ class Circuit(object):
                 node.disconnectOutput(e)
                 e.connectInput(fault)
 
-        elif signalName in self.outNodes and inputIndex is None:
+        # change Edge to the OutNode
+        elif signalName in self.outNodes and useOutNode:
             node = self.outNodes[signalName]
             e = node.inEdge
             e.inNode.disconnectOutput(e)
             fault.connectOutput(e)
 
+        # add fault around a gate
         elif signalName in self.gates:
             gate = self.gates[signalName]
+            inputIndex = kwargs.get('inputIndex', None)
             if inputIndex is None: # fault at output of gate
                 node = gate.output
                 # iterate over copy of list because deleting 
@@ -120,7 +127,6 @@ class Circuit(object):
         self.gates[gateName].connectInput(edge, ctr)
     
     # helper function to connect output gates (or inputNodes) to output nodes
-    # because connectGate only connects the inputs of the gate
     def connectOutput(self, outputNodeName: str):
         if outputNodeName in self.gates:
             signal = self.gates[outputNodeName]
@@ -134,7 +140,14 @@ class Circuit(object):
         signal.connectOutput(edge)
         outputNode.connectInput(edge)
 
+
     def generateMiter(self, faulty):
+        """
+        Take another circuit _faulty_ that has the same input and output nodes as _self_
+        and modify _self_ such that _self_ contains both circuits and connects their outputs
+        via a miter structure. _self_ will have a new output which is the output of the
+        miter structure
+        """
         # 1. merge gates, edges and outNodes of faulty circuit into orignal circuit
         # copy gates
         for gate in faulty.gates.values():
@@ -160,28 +173,18 @@ class Circuit(object):
             xor_name = "miter_XOR_%d" % ctr
             self.addGate(xor_name, 'xor', 2)
             xor_gates.append(self.gates[xor_name])
+            xor_gate = self.gates[xor_name]
             ctr += 1
-            e = outNode.inEdge
-            self.edges.remove(e)
-            if outName in self.gates:
-                outGate = self.gates[outName]
-                outGate.disconnectOutput(e)
-            else: # inNode is connected directly to outNode
-                inNode = self.inNodes[outName]
-                inNode.disconnectOutput(e)
-            self.connectGate(outName, xor_name, 0)
 
+            # reconnect the predecessor of OutNode to the XOR gate
+            e = outNode.inEdge
+            e.disconnectOutput()
+            xor_gate.connectInput(e, 0)
+ 
             # do same for faulty circuit
-            e = outNodeFaulty.inEdge
-            self.edges.remove(e)
-            if outName in faulty.gates:
-                outGate = faulty.gates[outName]
-                outGate.disconnectOutput(e)
-                self.connectGate(self.getFaultySignalName(outName), xor_name, 1)
-            else:
-                # no need to redirect inNode of faulty since this
-                # object is no longer needed
-                self.connectGate(outName, xor_name, 1)           
+            e = outNodeFaulty.inEdge # use edge to get predecessor instead of looking into gates/inNodes
+            e.disconnectOutput()
+            xor_gate.connectInput(e, 1)             
 
         self.outNodes = {}
         # generate final OR and connect XORs to it
@@ -209,6 +212,10 @@ class Circuit(object):
             print(e)
 
     def getFaultySignalName(self, signalName):
+        """
+        Return corresponding faulty signal name of the given signal.
+        Assumes that generateMiter has been called before, otherwise this function is not useful
+        """
         return signalName + Circuit.FAULT_SUFFIX
 
     def __deepcopy__(self, memo):

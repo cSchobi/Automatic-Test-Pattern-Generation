@@ -2,22 +2,20 @@ from z3 import *
 from Circuit import *
 from GateConstraintVisitor import *
 """
-iterate over gates and make a boolean variable for each connection and add constraint
-iterate over inNodes, outNodes and constant 0/1 and create variables
-iterate over edges and add constraints
-
+Class that generates an input for a given fault and circuit, 
+using the SMT solver z3
 """
 
-
 class ATPG(object):
-    def __init__(self, circuit: Circuit, fault, signalName, inputIndex = None):
+    def __init__(self, circuit: Circuit, fault, signalName, inputIndex = None, useOutNode = None):
         self.circuit = circuit
         self.s = Solver()
         self.vars = {}
 
         faulty = copy.deepcopy(self.circuit)
-        faulty.addFault(fault, signalName, inputIndex)
+        faulty.addFault(fault, signalName, inputIndex=inputIndex, useOutNode=useOutNode)
         self.circuit.generateMiter(faulty)
+        self.circuit.print()
         self.declareVars()
         self.setGateConstraints()
         self.setEdgeConstraints()
@@ -64,6 +62,7 @@ class ATPG(object):
 
     def solve(self):
         print("solver status")
+        print(self.s)
         if self.s.check() == sat:
             self.print()
         else:
@@ -77,7 +76,7 @@ class ATPG(object):
                 var = self.vars[inNodeName]
                 print(inNodeName, m[var])
 
-            print("signal values: original | faulty")
+            print("gate values: original | faulty")
             for gateName in self.circuit.gates:
                 faultyGatename = self.circuit.getFaultySignalName(gateName)
                 if faultyGatename in self.circuit.gates: # filter faulty gates

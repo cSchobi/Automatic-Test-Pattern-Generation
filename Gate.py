@@ -2,6 +2,10 @@ from Node import *
 from Edge import *
 
 class Gate(object):
+    """
+    Represents a gate object that has one output and at least one input.
+    For the input and each output a node is stored.
+    """
     def __init__(self, name, inputSize):
         self.name = name
         self.output = OutputNode(self)
@@ -78,6 +82,9 @@ class BufGate(Gate):
         return 'buf_' + super().__str__()
 
 class OutputNode(Node):
+    """
+    Represents the output of a gate
+    """
     def __init__(self, gate):
         self.outEdges = []
         self.gate = gate
@@ -96,6 +103,9 @@ class OutputNode(Node):
         return self.gate.__str__()
 
 class InputNode(Node):
+    """
+    Represents an input of a gate
+    """
     def __init__(self, gate):
         self.inEdge = None
         self.gate = gate

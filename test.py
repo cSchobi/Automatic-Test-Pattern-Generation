@@ -5,17 +5,17 @@ from ATPG import *
 from Circuit import Circuit
 from Parser import Parser
 
-def test(fileName, fault, signalName, inputIndex = None):
+def test(fileName, fault, signalName, inputIndex = None, useOutNode = None):
     c = Circuit()
     p = Parser(c, fileName)
     p.parse()
-    atpg = ATPG(c, fault, signalName, inputIndex)
+    atpg = ATPG(c, fault, signalName, inputIndex, useOutNode)
     atpg.solve()
 
 def simple_test():
     print('simple test with 3 gates')
-    test('simple_test.bench', Circuit.STUCK_AT_1_FAULT, 'e')
-    # expect unsate
+    test('simple_test.bench', Circuit.STUCK_AT_1_FAULT, 'f')
+    # expect unsat
 
 def c17_test1():
     print('test 1 of c17 bench')
@@ -23,7 +23,7 @@ def c17_test1():
 
 def c17_test2():
     print('test 2 of c17 bench')
-    test('c17.bench', Circuit.STUCK_AT_0_FAULT, 'G22gat', 1)
+    test('c17.bench', Circuit.STUCK_AT_0_FAULT, 'G22gat', inputIndex=1)
 
 def c432_test():
     print('test c432')
@@ -31,13 +31,14 @@ def c432_test():
 
 def c1355_test():
     print('test c1355')
-    test('c1355.bench', Circuit.STUCK_AT_0_FAULT, 'G996gat', 4)
+    test('c1355.bench', Circuit.STUCK_AT_0_FAULT, 'G996gat', inputIndex=4)
 
 def c7552_test():
     print('test c7552')
-    test('c7552.bench', Circuit.STUCK_AT_1_FAULT, 'G940')
+    test('c7552.bench', Circuit.STUCK_AT_1_FAULT, 'G550')
 
 simple_test()
+
 c17_test1()
 c17_test2()
 c432_test()

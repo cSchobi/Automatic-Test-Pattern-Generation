@@ -4,6 +4,9 @@ from Circuit import *
 from Gate import *
 
 class Parser(object):
+    """
+    Parser for parsing bench files into an internal data structure
+    """
 
     # regular expression to match lines
     INPUT_PATTERN = re.compile("INPUT\((.*)\)")
