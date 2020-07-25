@@ -1,5 +1,6 @@
 from z3 import *
 from Circuit import *
+from ATPGCircuit import *
 from GateConstraintVisitor import *
 """
 Class that generates an input for a given fault and circuit, 
@@ -8,14 +9,12 @@ using the SMT solver z3
 
 class ATPG(object):
     def __init__(self, circuit: Circuit, fault, signalName, inputIndex = None, useOutNode = None):
-        self.circuit = circuit
         self.s = Solver()
-        self.vars = {}
+        self.vars = {} # Map with all variables of SMT solves 
 
-        faulty = copy.deepcopy(self.circuit)
+        faulty = copy.deepcopy(circuit)
         faulty.addFault(fault, signalName, inputIndex=inputIndex, useOutNode=useOutNode)
-        self.circuit.generateMiter(faulty)
-        self.circuit.print()
+        self.circuit = ATPGCircuit(circuit, faulty)
         self.declareVars()
         self.setGateConstraints()
         self.setEdgeConstraints()
@@ -62,7 +61,6 @@ class ATPG(object):
 
     def solve(self):
         print("solver status")
-        print(self.s)
         if self.s.check() == sat:
             self.print()
         else:
