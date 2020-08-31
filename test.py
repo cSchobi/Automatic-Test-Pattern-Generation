@@ -11,6 +11,7 @@ def test(fileName, fault, signalName, inputIndex = None, useOutNode = None):
     p.parse()
     atpg = ATPG(c, fault, signalName, inputIndex, useOutNode)
     atpg.solve()
+    atpg.print()
 
 def simple_test():
     print('simple test with 3 gates')
@@ -38,9 +39,8 @@ def c7552_test():
     test('c7552.bench', Circuit.STUCK_AT_1_FAULT, 'G550')
 
 simple_test()
-
 c17_test1()
 c17_test2()
 c432_test()
 c1355_test()
-c7552_test()
+c7552_test() 

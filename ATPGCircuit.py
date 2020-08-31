@@ -10,7 +10,8 @@ class ATPGCircuit(Circuit):
     def __init__(self, faultfree: Circuit, faulty: Circuit):
         """
         The constructor takes two circuits that need to have the same input and output nodes. 
-        These two circuits are merged into one and the output nodes are replaced with a miter structure
+        These two circuits are merged into one and the output nodes are replaced with a miter structure.
+        The input circuits must not be used afterwards.
         """
         self.inNodes = faultfree.inNodes
         self.outNodes = faultfree.outNodes
@@ -79,4 +80,4 @@ class ATPGCircuit(Circuit):
         Return corresponding faulty signal name of the given signal.
         Assumes that generateMiter has been called before, otherwise this function is not useful
         """
-        return signalName + Circuit.FAULT_SUFFIX
+        return signalName + ATPGCircuit.FAULT_SUFFIX

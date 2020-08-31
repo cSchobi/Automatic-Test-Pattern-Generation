@@ -60,32 +60,31 @@ class ATPG(object):
         self.s.add(True == self.vars[outNode.__str__()])
 
     def solve(self):
-        print("solver status")
-        if self.s.check() == sat:
-            self.print()
-        else:
-            print("unsat")
+        self.s.check()   
             
-    def print(self):
-        print("input vars:")
+    def print(self, printAllSignals = False):
         if self.s.check() == sat:
+            print("input vars:")
             m = self.s.model()
             for inNodeName in self.circuit.getInNodeNames():
                 var = self.vars[inNodeName]
-                print(inNodeName, m[var])
+                print('{0!s:<5s}: {1!s:<5s}'.format(inNodeName, m[var]))
 
-            print("gate values: original | faulty")
-            for gateName in self.circuit.gates:
-                faultyGatename = self.circuit.getFaultySignalName(gateName)
-                if faultyGatename in self.circuit.gates: # filter faulty gates
-                    gate = self.circuit.gates[gateName]
-                    var = self.vars[gate.output.__str__()]
-                    faultyGate = self.circuit.gates[faultyGatename]
-                    varFaulty = self.vars[faultyGate.output.__str__()]
+            if printAllSignals:
+                print("gate values: original | faulty")
+                for gateName in self.circuit.gates:
+                    faultyGatename = self.circuit.getFaultySignalName(gateName)
+                    if faultyGatename in self.circuit.gates: # filter faulty gates
+                        gate = self.circuit.gates[gateName]
+                        var = self.vars[gate.output.__str__()]
+                        faultyGate = self.circuit.gates[faultyGatename]
+                        varFaulty = self.vars[faultyGate.output.__str__()]
 
-                    print('{0}: {1!s:<5s} | {2!s:<5s}'.format(gateName, m[var], m[varFaulty]))
+                        print('{0}: {1!s:<5s} | {2!s:<5s}'.format(gateName, m[var], m[varFaulty]))
 
-                    for (i, (inputNode, faultyInputNode)) in enumerate(zip(gate.inputs, faultyGate.inputs)):
-                        var = self.vars[inputNode.__str__()]
-                        varFaulty = self.vars[faultyInputNode.__str__()]
-                        print('\t{0}: {1!s:<5s} | {2!s:<5s}'.format(i, m[var], m[varFaulty]))
+                        for (i, (inputNode, faultyInputNode)) in enumerate(zip(gate.inputs, faultyGate.inputs)):
+                            var = self.vars[inputNode.__str__()]
+                            varFaulty = self.vars[faultyInputNode.__str__()]
+                            print('\t{0}: {1!s:<5s} | {2!s:<5s}'.format(i, m[var], m[varFaulty]))
+        else:
+            print('The given fault cannot be detected')
