@@ -8,16 +8,16 @@ using the SMT solver z3
 """
 
 class ATPG(object):
-    def __init__(self, circuit: Circuit, fault, signalName, inputIndex = None, useOutNode = None):
+    def __init__(self, circuit: Circuit):
         self.s = Solver()
         self.vars = {} # Map with all variables of SMT solves 
 
-        faulty = copy.deepcopy(circuit)
-        faulty.addFault(fault, signalName, inputIndex=inputIndex, useOutNode=useOutNode)
-        self.circuit = ATPGCircuit(circuit, faulty)
+        #faulty = copy.deepcopy(circuit)
+        #faulty.addFault(fault, signalName, inputIndex=inputIndex, useOutNode=useOutNode)
+        self.circuit = ATPGCircuit(copy.deepcopy(circuit), copy.deepcopy(circuit))
         self.declareVars()
+        self.setInputConstraints()
         self.setGateConstraints()
-        self.setEdgeConstraints()
         self.setOutputConstraint()
 
     def declareVars(self):
@@ -28,6 +28,9 @@ class ATPG(object):
                 var_name = inputNode.__str__()
                 self.vars[var_name] = Bool(var_name)
         for inNode in self.circuit.getInNodes():
+            var_name = inNode.__str__()
+            self.vars[var_name] = Bool(var_name)
+        for inNodeName, inNode in self.circuit.faultyInNodes.items():
             var_name = inNode.__str__()
             self.vars[var_name] = Bool(var_name)
         for outNode in self.circuit.getOutNodes():
@@ -52,6 +55,11 @@ class ATPG(object):
         visitor = GateConstraintVisitor(self.s, self.vars)
         for gate in self.circuit.getGates():
             gate.accept(visitor)
+
+    def setInputConstraints(self):
+        for inNodeName in self.circuit.inNodes:
+            faultyInNodeName = self.circuit.getFaultySignalName(inNodeName)
+            self.s.add(self.vars[inNodeName] == self.vars[faultyInNodeName])
 
     def setOutputConstraint(self):
         assert(len(self.circuit.getOutNodeNames()) == 1)
@@ -88,3 +96,12 @@ class ATPG(object):
                             print('\t{0}: {1!s:<5s} | {2!s:<5s}'.format(i, m[var], m[varFaulty]))
         else:
             print('The given fault cannot be detected')
+
+    def addFault(self, fault, signalName, inputIndex = None, useOutNode = None):
+        self.s.push()
+        self.circuit.addFault(fault, signalName, inputIndex=inputIndex, useOutNode=useOutNode)
+        self.setEdgeConstraints()
+
+    def removeFault(self):
+        self.s.pop()
+        self.circuit.removeFault()

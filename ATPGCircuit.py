@@ -1,11 +1,12 @@
-from Circuit import Circuit
+from Circuit import *
+from Node import *
 
 class ATPGCircuit(Circuit):
     """
     Representation of a circuit that can be used for generating input assignments
     to test for stuck at 1 or 0 faults. 
     """
-    FAULT_SUFFIX = 'f'
+    FAULT_SUFFIX = '_f'
 
     def __init__(self, faultfree: Circuit, faulty: Circuit):
         """
@@ -14,6 +15,7 @@ class ATPGCircuit(Circuit):
         The input circuits must not be used afterwards.
         """
         self.inNodes = faultfree.inNodes
+        self.faultyInNodes = {}
         self.outNodes = faultfree.outNodes
         self.gates = faultfree.gates
         self.edges = faultfree.edges
@@ -36,12 +38,11 @@ class ATPGCircuit(Circuit):
         for e in faulty.edges:
             self.edges.append(e)
 
-        # redirect edges from input in faulty to input of original circuit
+        # copy inNodes
         for inNode in faulty.inNodes.values():
-            for e in inNode.outEdges[:]:
-                inNode.disconnectOutput(e)
-                # connect edge to inNode of original circuit with same name
-                e.connectInput(self.inNodes[inNode.name]) 
+            inNode.name = self.getFaultySignalName(inNode.name)
+            self.faultyInNodes[inNode.name] = inNode
+
 
         # 2. add miter structure; replace outNodes with XOR gates, add final Or gate and add 1 outNode
         ctr = 0
@@ -81,3 +82,82 @@ class ATPGCircuit(Circuit):
         Assumes that generateMiter has been called before, otherwise this function is not useful
         """
         return signalName + ATPGCircuit.FAULT_SUFFIX
+
+    def addFault(self, fault, signalName, **kwargs):
+        """ variables are set to store where the fault is """
+        self.fault = fault
+        self.signalName = signalName
+        self.useOutNode = kwargs.get('useOutNode', None)
+        self.inputIndex = kwargs.get('inputIndex', None)
+        faultySignalName = self.getFaultySignalName(signalName)
+        if signalName in self.inNodes: # fault at input
+            node = self.faultyInNodes[faultySignalName]
+            # iterate over copy of list because deleting
+            # while iterating gives undefined behaviour
+            for e in node.outEdges[:]:
+                node.disconnectOutput(e)
+                fault.connectOutput(e)
+
+        # change Edge to the OutNode
+            """"elif signalName in self.outNodes and useOutNode:
+            node = self.outNodes[signalName]
+            e = node.inEdge
+            e.inNode.disconnectOutput(e)
+            fault.connectOutput(e) """
+
+        # add fault around a gate
+        elif faultySignalName in self.gates:
+            gate = self.gates[faultySignalName]
+            if self.inputIndex is None: # fault at output of gate
+                node = gate.output
+                # iterate over copy of list because deleting 
+                # while iterating gives undefined behaviour
+                for e in node.outEdges[:]: 
+                    node.disconnectOutput(e)
+                    fault.connectOutput(e)
+            else: # fault at input
+                node = gate.inputs[self.inputIndex]
+                e = node.inEdge
+                e.inNode.disconnectOutput(e)
+                fault.connectOutput(e)                
+        else:
+            raise ValueError('cannot add fault because signal is not found')   
+
+    def removeFault(self):
+        faultySignalName = self.getFaultySignalName(self.signalName)
+        if self.signalName in self.inNodes: # fault at input
+            faultyInNode = self.faultyInNodes[faultySignalName]
+            for e in self.fault.outEdges[:]: # BUG
+                self.fault.disconnectOutput(e)
+                faultyInNode.connectOutput(e)
+
+        elif self.signalName in self.gates:
+            gate = self.gates[faultySignalName]
+            if self.inputIndex is None:
+                node = gate.output
+                for e in self.fault.outEdges[:]:
+                    self.fault.disconnectOutput(e)
+                    node.connectOutput(e)
+            else:
+                # get corresponding gate and input node from fault free circuit
+                faultFreeGate = self.gates[self.signalName] # corresponding gate in fault free circuit
+                faultFreeNode = faultFreeGate.inputs[self.inputIndex]
+                node = faultFreeNode.inEdge.inNode
+                if isinstance(node, OutputNode):
+                    nodeInFaultyCircuit = self.gates[self.getFaultySignalName(node.gate.name)]
+                elif isinstance(node, InNode):
+                    nodeInFaultyCircuit = self.faultyInNodes[self.getFaultySignalName(node.name)]
+                else:
+                    print(type(faultFreeNode))
+                    raise ValueError('Edge is connected to invalid node')
+                
+                assert(len(self.fault.outEdges) == 1)
+                e = self.fault.outEdges[0]
+                self.fault.disconnectOutput(e)
+                nodeInFaultyCircuit.connectOutput(e) # BUG get corresponding node in faultfree cricuit and reroute edge
+
+        self.signalName = None
+        self.fault = None
+        self.inputIndex = None
+        self.useOutNode = None
+

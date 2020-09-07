@@ -55,42 +55,6 @@ class Circuit(object):
     def addEdge(self, inNode, outNode):
         self.edges.append(Edge(inNode, outNode))
 
-    def addFault(self, fault, signalName, **kwargs):
-        useOutNode = kwargs.get('useOutNode', None)
-        if signalName in self.inNodes: # fault at input
-            node = self.inNodes[signalName]
-            # iterate over copy of list because deleting
-            # while iterating gives undefined behaviour
-            for e in node.outEdges[:]:
-                node.disconnectOutput(e)
-                e.connectInput(fault)
-
-        # change Edge to the OutNode
-        elif signalName in self.outNodes and useOutNode:
-            node = self.outNodes[signalName]
-            e = node.inEdge
-            e.inNode.disconnectOutput(e)
-            fault.connectOutput(e)
-
-        # add fault around a gate
-        elif signalName in self.gates:
-            gate = self.gates[signalName]
-            inputIndex = kwargs.get('inputIndex', None)
-            if inputIndex is None: # fault at output of gate
-                node = gate.output
-                # iterate over copy of list because deleting 
-                # while iterating gives undefined behaviour
-                for e in node.outEdges[:]: 
-                    node.disconnectOutput(e)
-                    fault.connectOutput(e)
-            else: # fault at input
-                node = gate.inputs[inputIndex]
-                e = node.inEdge
-                e.inNode.disconnectOutput(e)
-                fault.connectOutput(e)                
-        else:
-            raise ValueError('cannot add fault because signal is not found')
-
     def addGate(self, gateName, gateType, numInputs):
         gateType = gateType.lower()
         if gateType == 'and':

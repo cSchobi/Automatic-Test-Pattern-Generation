@@ -86,11 +86,13 @@ class OutputNode(Node):
     Represents the output of a gate
     """
     def __init__(self, gate):
+        super().__init__(gate.name)
         self.outEdges = []
         self.gate = gate
 
     def connectOutput(self, edge):
         self.outEdges.append(edge)
+        edge.connectInput(self)
 
     def connectInput(self, edge):
         raise ValueError('output node of gate has no input')
@@ -107,13 +109,16 @@ class InputNode(Node):
     Represents an input of a gate
     """
     def __init__(self, gate):
+        super().__init__(gate.name)
         self.inEdge = None
         self.gate = gate
 
     def connectInput(self, edge):
         self.inEdge = edge
+        edge.connectOutput(self)
 
     def disconnectInput(self):
+        inEdge.disconnectInput(self)
         self.inEdge = None
 
     def connectOutput(self, edge):
