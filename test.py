@@ -9,7 +9,8 @@ def test(fileName, fault, signalName, inputIndex = None, useOutNode = None):
     c = Circuit()
     p = Parser(c, fileName)
     p.parse()
-    atpg = ATPG(c, fault, signalName, inputIndex, useOutNode)
+    atpg = ATPG(c)
+    atpg.addFault(fault, signalName, inputIndex, useOutNode)
     atpg.solve()
     atpg.print()
 
@@ -38,9 +39,14 @@ def c7552_test():
     print('test c7552')
     test('c7552.bench', Circuit.STUCK_AT_1_FAULT, 'G550')
 
-simple_test()
+def c6288_test():
+    print('test c6288')
+    test('c6288.bench', Circuit.STUCK_AT_0_FAULT, 'G1371gat')
+
+""" simple_test()
 c17_test1()
 c17_test2()
 c432_test()
 c1355_test()
-c7552_test() 
+c7552_test()   """
+c6288_test()
