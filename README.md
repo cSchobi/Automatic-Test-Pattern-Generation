@@ -20,6 +20,6 @@ The miter structure connects the corresponding output signals of two circuits wi
 This circuit is then encoded as an SMT instance and passed to the SMT solver Z3. The encoding works as follows:
 For each input and output of each gate and for each input and output node, a boolean variable is introduced. For each edge the connected nodes have to have the same value. For each gate the output value has to have the value corresponding to its function and input values. For example,a NAND gate with the Inputs 'I1' and 'I2' and Output 'O' has the constraint 'O' == nand(I1, I2). Finally, the output of the miter structure needs to be 1. This ensures that the faulty and fault free circuits have different outputs and the fault can be observed by only looking at the output values.
 
-If the SMT solver finds a model, i.e. a solution to the instance is found, the generated input pattern, that allows us to check for the given fault, can be extracted. Otherwise the given fault cannot be detected. The image below shows for the running example that the generated Input 
-[g1 = 1, g2 = 1, g3 = 1, g6 = 1, g7 = 1] the Stuck-at-1 fault of the Ouptut of the Gate g11 can be detected.
+If the SMT solver finds a model, i.e. a solution to the instance is found, the generated input pattern, that allows us to check for the given fault, can be extracted. Otherwise the given fault cannot be detected. The image below shows that with the generated Input
+[g1 = 1, g2 = 1, g3 = 1, g6 = 1, g7 = 1] the Stuck-at-1 fault of the output of the Gate g11 can be detected.
 ![Circuit that contains original circuit, the copy and the miter structure](images/ATPGCircuit_with_generated_input.png)
