@@ -6,7 +6,7 @@ import copy
 import logging
 import time
 
-DIRECTORY = "../bench_files"
+DIRECTORY = "./bench_files"
 
 def run_test(atpg : ATPG, fault, signalName, inputIndex = None, useOutNode = None):
 
@@ -46,8 +46,6 @@ for filename in os.listdir(DIRECTORY):
                 # inputs of gate
                 run_test(atpg, fault, gateName, inputIndex = i)
 
-        """ for outNodeName in c.outNodes:
-            run_test(atpg, fault, outNodeName, useOutNode = True) """
         logging.info("FINISHED with stuck at " + ("1" if fault is Circuit.STUCK_AT_1_FAULT else "0") + " fault")
     end = time.process_time()
     logging.info(filename + " ELAPSED TIME: " + str(end - start) + " seconds")

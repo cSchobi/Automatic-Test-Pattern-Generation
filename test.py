@@ -5,9 +5,11 @@ from ATPG import *
 from Circuit import Circuit
 from Parser import Parser
 
+DIRECTORY = "./bench_files"
+
 def test(fileName, fault, signalName, inputIndex = None, useOutNode = None):
     c = Circuit()
-    p = Parser(c, fileName)
+    p = Parser(c, os.path.join(DIRECTORY, fileName))
     p.parse()
     atpg = ATPG(c)
     atpg.addFault(fault, signalName, inputIndex, useOutNode)
@@ -43,10 +45,10 @@ def c6288_test():
     print('test c6288')
     test('c6288.bench', Circuit.STUCK_AT_0_FAULT, 'G1371gat')
 
-""" simple_test()
+simple_test()
 c17_test1()
 c17_test2()
 c432_test()
 c1355_test()
-c7552_test()   """
+c7552_test()
 c6288_test()
