@@ -6,8 +6,9 @@ Integrated circuits need to be checked for production faults. There are several 
 
 # Implementation
 The input files that describe the circuit need to have the Bench format (for examples see: https://ddd.fit.cvut.cz/prj/Benchmarks/).
+
+The input file is parsed and an internal data structure is built up. This data structure has Gates, Nodes and Edges that represent the circuit. Nodes are use to represent the input and output of the circuit, but are also used inside the Gates to represent input and output connection points. The Edges connect on node to another node. An example of this is visualised below.
 ![Internal datastructure of parsed circuit](images/input_circuit.png)
-The input file is parsed and an internal data structure is built up. This data structure has Gates, Nodes and Edges that represent the circuit. Nodes are use to represent the input and output of the circuit, but are also used inside the Gates to represent input and output connection points. The Edges connect on node to another node.
 
 Next a copy of the circuit is made and is connected to the original circuit by connecting the corresponding input nodes and appending a miter structure to the outputs (for an explanation of the mitre structure see below). 
 ![Circuit that contains original circuit, the copy and the miter structure](images/ATPGCircuit.png)
