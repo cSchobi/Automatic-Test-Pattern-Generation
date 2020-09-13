@@ -1,0 +1,8 @@
+INPUT(a)
+INPUT(b)
+INPUT(c)
+OUTPUT(f)
+
+d = or(a, b)
+e = nand(b, c)
+f = or(d, e)
